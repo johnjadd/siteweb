@@ -1,10 +1,49 @@
 export default{
-  /*data(){
-    return{
-      tempId: '',
-    };
-  },*/
   methods:{
+    mapDevId2Local(dev){
+      if(dev == undefined) dev = this.$store.rootDev;
+      var devs = this.getAllDevs(dev);
+      if(devs == undefined) return;
+      devs.forEach(dev=>{
+        dev.id = this.$store.getters.devIds.indexOf(dev.id);
+        dev.vars.forEach(vv=>{
+          this.mapVarId2Local(vv);
+        });
+      });
+    },
+
+    mapDevId2Global(dev){
+      if(dev == undefined) dev = this.$store.rootDev;
+      var data = JSON.parse(JSON.stringify(dev));
+
+      var devs = this.getAllDevs(data);
+      if(devs == undefined) return;
+      devs.forEach(dev=>{
+        dev.id = this.$store.getters.devIds[dev.id];
+        dev.fatherId = this.$store.getters.devIds[dev.fatherId];
+      });
+
+      return data;
+    },
+
+    mapVarId2Local(varx){
+      if(varx == undefined) return;
+      varx.id = (varx.id & 1024);
+    },
+
+    mapVarId2Global(varx, dev){
+      if(varx == undefined) return undefined;
+      if(dev == undefined){
+        dev = this.getDev(varx.devId);
+        if(dev == undefined) return undefined;
+      };
+
+      var data = JSON.parse(JSON.stringify(varx));
+      data.id = dev.id * 1024 + varx.id;
+
+      return data;
+    },
+
     findFathers(startDev, endDevId){
       if(startDev == undefined) return;
       if(startDev.id == endDevId) return;
@@ -12,7 +51,7 @@ export default{
       if(startDev.children!=undefined){
         startDev.children.forEach(dd=>{
           dd.fatherId = startDev.id;
-          //dd.fatherName = startDev.name;
+          dd.fatherName = startDev.name;
           //dd.father = startDev;
           this.findFathers(dd, endDevId);
         });
@@ -23,10 +62,11 @@ export default{
       var store = this.$store;
       store.dispatch("getSite", siteId).then(ret=>{
         if(ret=="done"){
+          //this.mapDevId2Local();
+
           if(store.getters.footPrints.length==0){
             store.commit('pushFootPrint', store.getters.curSite.dev);
           }
-
           var footDev = store.getters.footPrints.pop();
           store.commit("pushFootPrint", footDev);
 
@@ -35,12 +75,15 @@ export default{
 
           console.log("refreshSiteFromServer done!");
           this.findFathers(store.getters.rootDev, undefined);
-        }else if (ret=="failed") {}
+
+        }else if (ret=="failed") {
+          alert("Refresh site from server failed!");
+        }
       });
     },
 
     modDev(devdata){
-      console.log("modDev from data: " + JSON.stringify(devdata));
+      //console.log("modDev from data: " + JSON.stringify(devdata));
       var oldParent = this.getParent(devdata.id, undefined);
       var newParent = this.getDev(devdata.fatherId, undefined);
       if(oldParent==undefined || newParent==undefined) return;
@@ -69,23 +112,18 @@ export default{
 
     addDev(data){
       var parent = this.getDev(data.fatherId, undefined);
-      console.log("addDev from data: " + JSON.stringify(data) + " to parent: " + parent.name);
+      //console.log("addDev from data: " + JSON.stringify(data) + " to parent: " + parent.name);
       if(parent == undefined) return;
 
-      /*var sample = {id: this.getNewDevIds(this.$store.getters.rootDev) , name: 'newDev', localId: '', children: [], vars: []};
-      this.copyUndefinedProps(sample, data);*/
       data = this.standardizeDev(data);
-      if(data.id == 0){
-        data.id = this.getNewDevIds()[0];
-      }
-      //console.log("devdata = " + JSON.stringify(devdata));
+
       parent.children.push(data);
       console.log("addDev done!");
     },
 
     delDev(data){
       var parent = this.getDev(data.fatherId, undefined);
-      console.log("delDev from data: " + JSON.stringify(data) + " in parent: " + parent);
+      //console.log("delDev from data: " + JSON.stringify(data) + " in parent: " + parent);
       if(parent == undefined) return;
 
       var index = parent.children.length
@@ -100,53 +138,9 @@ export default{
       }
     },
 
-    standardizeDev(data){
-      var sample = {id: '0L' , name: 'newDev', localId: '', children: [], vars: []};
-      this.copyUndefinedProps(sample, data);
-      console.log("standardizeDev finished");
-      /*var index = data.children.length;
-      while(index--){
-        this.standardizeDev(data.children[index]);
-      }*/
-
-      return data;
-    },
-
-    standardizeVar(data){
-      var sample = {id: '0L', name: 'newVar',  type: 'double', value: '0'};
-      this.copyUndefinedProps(sample, data);
-      return data;
-    },
-
-    renewAllIds(startDev){
-      var devs = this.getAllDevs(startDev, undefined);
-
-      var index = devs.length;
-      if(index == 0) return;
-
-      var ids = this.getNewDevIds(undefined, index);
-      while(index--){
-        var dev = devs[index];
-        dev.id = ids[index];
-
-        var vars = dev.vars;
-        dev.vars = [];
-        var vindex = vars.length;
-        var vids = this.getNewVarIds(dev, vindex);
-        while(vindex--){
-          var varx = vars[vindex];
-          varx.id = vids[vindex];
-          varx.devId = dev.id;
-          dev.vars.push(varx);
-        }
-      }
-
-      this.findFathers(startDev);
-    },
-
     modVar(data){
       var dev = this.getDev(data.devId, undefined);
-      console.log("modVar from data: " + JSON.stringify(data) + " in dev: " + dev.name);
+      //console.log("modVar from data: " + JSON.stringify(data) + " in dev: " + dev.name);
       if(dev == undefined) return;
 
       var varx = this.getVar(data.id, dev);
@@ -166,24 +160,18 @@ export default{
 
     addVar(data){
       var dev = this.getDev(data.devId, undefined);
-      console.log("addVar from data: " + JSON.stringify(data) + " to dev: " + data.name);
+      //console.log("addVar from data: " + JSON.stringify(data) + " to dev: " + data.name);
       if(dev == undefined) return;
 
-      data = this.standardizeVar(data);
-      if(data.id == 0){
-        data.id = this.getNewVarIds(dev, 1)[0];
-      }
-      /*var sample = {id: this.getNewVarIds(dev), name: 'newVar',  type: 'boolean'};
-      this.copyUndefinedProps(sample, data);
-      */
-      //console.log("devdata = " + JSON.stringify(devdata));
+      data = this.standardizeVar(data, dev);
+
       dev.vars.push(data);
       console.log("addVar done!");
     },
 
     delVar(data){
       var dev = this.getDev(data.devId, undefined);
-      console.log("delVar from data: " + JSON.stringify(data) + " in dev: " + dev.name);
+      //console.log("delVar from data: " + JSON.stringify(data) + " in dev: " + dev.name);
       if(dev == undefined) return;
 
       var vars = dev.vars;
@@ -195,6 +183,69 @@ export default{
           break;
         }
       }
+    },
+
+    standardizeDev(data){
+      var ret;
+      var sample = {name: 'newDev', localId: '',
+                    children: [], vars: []};
+      //getNewDevIds will take some time
+      if(data == undefined || data.id == undefined){
+          sample.id = this.getNewDevIds(1)[0];
+      }
+      if(data != undefined){
+        ret = JSON.parse(JSON.stringify(data));
+        this.copyUndefinedProps(sample, ret);
+      }else{
+        ret = sample;
+      }
+      //console.log("standardizeDev finished data = " + JSON.stringify(data));
+      return ret;
+    },
+
+    standardizeVar(data, dev){
+      if(dev == undefined) return undefined;
+
+      var ret;
+      var sample = {name: 'newVar',
+                    type: 'double', value: '0', time: (new Date()).toLocaleTimeString(),
+                    calMethod: '', calParam: '', devId: dev.id};
+      if(data == undefined || data.id == undefined){
+          sample.id = this.getNewVarIds(dev, 1)[0];
+      }
+      if(data != undefined){
+        ret = JSON.parse(JSON.stringify(data));
+        this.copyUndefinedProps(sample, ret);
+      }else{
+        ret = sample;
+      }
+      return ret;
+    },
+
+    renewAllIds(startDev){
+      var devs = this.getAllDevs(startDev, undefined);
+
+      var index = devs.length;
+      if(index == 0) return [];
+
+      var ids = this.getNewDevIds(index);
+      while(index--){
+        var dev = devs[index];
+        dev.id = ids[index];
+
+        var vars = dev.vars;
+        dev.vars = [];
+        var vindex = vars.length;
+        var vids = this.getNewVarIds(dev, vindex);
+        while(vindex--){
+          var varx = vars[vindex];
+          varx.id = vids[vindex];
+          varx.devId = dev.id;
+          dev.vars.push(varx);
+        }
+      }
+
+      this.findFathers(startDev);
     },
 
     getDev(devid, startDev){
@@ -253,6 +304,14 @@ export default{
       return undefined;
     },
 
+    getChiefVars(dev){
+      if(dev == undefined) return [];
+      var vars = dev.vars.filter(vv=>{
+        return vv.chief;
+      });
+      return vars;
+    },
+
     getFullDevName(startDev, devid){
       var name = "";
       return name;
@@ -269,8 +328,11 @@ export default{
     getAllDevs(startDev, endDevId){
       if(startDev == undefined){
         startDev = this.$store.getters.rootDev;
+        if(startDev == undefined){
+          return [];
+        }
       }
-      if(startDev.id == endDevId) return undefined;
+      if(startDev.id == endDevId) return [];
 
       var devs = [];
       devs.push(startDev);
@@ -279,65 +341,91 @@ export default{
         startDev.children.forEach(dd=>{
           var dds = this.getAllDevs(dd, endDevId);
           if(dds!=undefined){
-            dds.forEach(dd=>{
-              devs.push(dd);
+            dds.forEach(ddx=>{
+              devs.push(ddx);
             });
           }
         });
       }
-
-
       return devs;
     },
 
-    getNewDevIds(rootDev, count){
-      if(rootDev == undefined){
-        rootDev = this.$store.getters.rootDev;
+    getAllChildren(startDev){
+      //alert("alertDev = " + JSON.stringify(startDev));
+      if(startDev == undefined){
+        startDev = this.$store.getters.rootDev;
+
+        if(startDev == undefined){
+          return [];
+        }
       }
-      if(count == undefined || count<=0){
+
+      var devs = [];
+      if(startDev.children != undefined){
+        startDev.children.forEach(dd=>{
+          devs.push(dd);
+
+          var dds = this.getAllChildren(dd);
+          dds.forEach(ddx=>{
+            devs.push(ddx);
+          });
+        });
+      }
+
+      //console.log("getAllChildren length : " + devs.length);
+      return devs;
+    },
+
+    getNewDevIds(count){
+      //alert(count)
+      var rootDev = this.$store.getters.rootDev;
+      if(rootDev == undefined) return undefined;
+
+      if(count == undefined){
         count = 1;
       }
-
-      var newIds = [];
-      var ids = [];
-      var max = 0;
-
+      if(isNaN(count) == false){
+        if(count < 1){
+          count = 1;
+        }
+      }
+      //alert(count);
+      var newIds = JSON.parse(JSON.stringify(this.$store.getters.devIds));
       var devs = this.getAllDevs(rootDev);
       if(devs!=undefined){
-          devs.forEach(devx=>{
-              ids.push(devx.id);
-          });
-      }
-
-      if(ids.length > 0){
-          ids.sort(function compare(id1, id2){    //find the max ids in the current vars
-              if(id1 > id2) return -1;
-              if(id1 < id2) return 1;
-              return 0;
-          });
-          max = ids[0] + 1;
-      }else{
-          max = 1;
-      }
-
-      console.log("getNewDevIds done. ids: " + JSON.stringify(ids));
-      while(count--){
-        newIds.push(max++);
+        devs.forEach(devx=>{
+          newIds.splice(newIds.indexOf(devx.id), 1);
+        });
+      };
+      //console.log("start getNewDevIds newIds = " + JSON.stringify(newIds));
+      if(isNaN(count) == false){
+        if(newIds.length >= count){
+          return newIds.slice(0, count);
+        }
       }
 
       return newIds;
     },
 
     getNewVarIds(dev, count){
+      //alert(count);
       if(dev==undefined) return [-1];
       if(count == undefined || count<=0){
         count = 1;
       }
+      if(isNaN(count) == false){
+        if(count < 1){
+          count = 1;
+        }
+      }
 
       var newIds = [];
-      var max = 0;
-      var ids = [];
+      var index = 0;
+      for(index = 0; index < 1024; index++){
+        newIds.push(dev.id*1024 + index);
+      }
 
+      var ids = [];
       if(dev.vars!=undefined){
           dev.vars.forEach(varx=>{
               ids.push(varx.id);
@@ -345,19 +433,23 @@ export default{
       }
 
       if(ids.length>0){
-          ids.sort(function compare(id1, id2){    //find the max ids in the current vars
-              if(id1 > id2) return -1;
-              if(id1 < id2) return 1;
+          /*ids.sort(function compare(id1, id2){    //find the max ids in the current vars
+              if(id1 < id2) return -1;
+              if(id1 > id2) return 1;
               return 0;
+          });*/
+
+          ids.forEach(id=>{
+            newIds.splice(newIds.indexOf(id), 1);
           });
-          max = ids[0] + 1;
-      }else{
-          max = dev.id*65536 + 1;
       }
-      console.log("getNewVarIds done. ids: " + JSON.stringify(ids));
-      while(count--){
-        newIds.push(max++);
+      //console.log("getNewVarIds done. newIds = " + newIds.join());
+      if(isNaN(count) == false){
+        if(newIds.length >= count){
+          return newIds.slice(0, count);
+        }
       }
+
       return newIds;
     },
 

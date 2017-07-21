@@ -1,5 +1,5 @@
 <template>
- <div id="app" >
+ <div id="app">
 
     <!--<router-view></router-view>-->
 
@@ -23,8 +23,6 @@ export default {
     //'templateDevs': Devs,
   } ,
   created(){
-    //this.$store.dispatch('getSites');
-    //this.$store.dispatch('setCurSiteId', 5);
   },
   data(){
       return{

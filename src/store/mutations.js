@@ -13,22 +13,39 @@ export default {
     setCurSite(state, site){
         var oldid = state.curSite.id;
         state.curSite = site;
-        //state.tempDev = site.dev;
 
         if(oldid != site.id){
-          //alert("setCurSite and footPrints cleared");
           state.footPrints.splice(0);
-          //state.footPrints.push(site.dev);
         }
+
+        //fill devIdMap
+        state.devIds.splice(0);
+
+        var maps = JSON.parse(site.devIdMap) ;//"[" + site.devIdMap + "]";
+        console.log("maps : " + JSON.stringify(maps));
+        var block = 8;
+        for(var index = 0; index < maps.length; index+=2){
+          var start = maps[index];
+          var count = maps[index+1];
+          for(var jndex=0; jndex<count*block; jndex++){
+            //var id = {rid: start*block+jndex};
+            //state.devIds.push(id);
+            state.devIds.push(start*block+jndex);
+          }
+        }
+        /*var index = 0;
+        state.devIds.forEach(id=>{
+          console.log((index++) + " " + JSON.stringify(id));
+        });*/
     },
 
     setTempDev(state, devdata){
         state.tempDev = devdata;
     },
 
-    setTempVar(state, vardata){
+    /*setTempVar(state, vardata){
         state.tempVar = vardata;
-    },
+    },*/
 
     /*updateDev(state, devdata){
       console.log("mutations--updateDev from data: " + JSON.stringify(devdata));
@@ -109,7 +126,7 @@ export default {
     },
 
     copy(state, data){
-       console.log("copy data! data = " +JSON.stringify(data));
+       //console.log("copy data! data = " +JSON.stringify(data));
        state.copyData = data;
     },
 
@@ -143,4 +160,8 @@ export default {
     setTempData(state, data){
       state.tempData = data;
     },
+
+    setFullscreenLoading(state, yes){
+      state.fullscreenLoading = yes;
+    }
 };

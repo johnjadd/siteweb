@@ -8,7 +8,7 @@
      :value="site.id">
     </el-option>
   </el-select>
-  <span @click="refresh">刷新</span>
+  <span type="text" @click="refresh">&nbsp&nbsp刷新</span>
 </div>
 </template>
 
@@ -20,12 +20,11 @@ export default {
   computed:{
     ...mapGetters({
       sitesx: 'sites',
-      curSiteId: 'curSiteId'
     })
   },
 
   created(){
-    this.$store.dispatch('getSites');
+    this.refresh();
   },
 
   data(){
@@ -39,20 +38,28 @@ export default {
   ],
 
   methods:{
-    siteChanged(event){
+    siteChanged(){
       if((this.siteId != "") && (this.siteId != this.curSiteId)){
         this.refreshSiteFromServer(this.siteId);
       }
-
     },
 
     refresh(){
       if(this.siteId == ""){
-        this.$store.dispatch('getSites');
+        this.$store.dispatch('getSites').then(ret=>{
+          if(ret == "failed"){
+            alert("Refresh sites from server failed!");
+          }else{
+            if(this.sitesx.length>0){
+              this.siteId = this.sitesx[0].id;  //this will cause the siteChanged() happened
+            }
+
+          }
+        });
       }else{
         this.refreshSiteFromServer(this.siteId);
       }
-    }
+    },
 
   }
 }

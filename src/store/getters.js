@@ -19,13 +19,13 @@ export default {
         return state.tempDev;
     },
 
-    tempVar(state){
+    /*tempVar(state){
         return state.tempVar;
     },
 
     tempVars(state){
         return state.tempVars;
-    },
+    },*/
 
     ipAddr(state){
         return state.ipAddr;
@@ -57,5 +57,13 @@ export default {
 
     tempData(state){
       return state.tempData;
+    },
+
+    fullscreenLoading(state){
+      return state.fullscreenLoading;
+    },
+
+    devIds(state){
+      return state.devIds;
     }
 };

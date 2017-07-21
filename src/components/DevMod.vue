@@ -1,7 +1,7 @@
 <template>
   <el-card class="box-card smallCard" :body-style="{padding:'8px'}">
     <div slot="header" class="clearfix">
-      <span style="line-height: 24px;">{{caption}}</span>
+      <span style="line-height: 24px;">[{{devx.name}} <small>{{devx.id}}</small>] {{caption}}</span>
       <el-button-group style="float: right;">
         <el-button size="small" type="primary" @click="ok">保存</el-button>
         <el-button size="small" @click="cancel">返回</el-button>
@@ -10,7 +10,18 @@
 
     <el-form label-width="80px">
       <el-form-item label="ID">
-        <el-input v-model="devl.id" :disabled="true"></el-input>
+        <!--<el-input v-model="devl.id" :disabled="true"></el-input>-->
+        <el-select v-model="devl.id" placeholder="无可用ID，无法创建"
+          size="large"
+          :disabled="modex=='mod'">
+          <el-option
+            v-for="item in optIds"
+            :key="item"
+            :label="item"
+            :value="item">
+          </el-option>
+        </el-select>
+        &nbsp&nbsp可用ID总数量: <U>{{$store.getters.devIds.length}}</U> 已用: <U>{{getAllDevs().length}}</U>
       </el-form-item>
 
       <el-form-item label="名称">
@@ -23,7 +34,7 @@
 
       <el-form-item label="父设备">
         <template>
-          <el-select v-model="devl.fatherId" placeholder="Select">
+          <el-select v-model="devl.fatherId" placeholder="Select" size="large">
             <el-option
               v-for="item in options"
               :key="item.id"
@@ -40,7 +51,6 @@
 
 <script>
 import {mapGetters} from 'vuex'
-import idExchange from "../mixins/idExchange"
 import utils from "../mixins/utils"
 
 export default{
@@ -49,44 +59,34 @@ export default{
             devx: 'tempDev',
             modex: "opMode",
             tempDatax: 'tempData'
-            //newIdx: "newTempDevId"
         })
     },
 
     mixins:[
-        idExchange,
         utils,
     ],
 
     data(){
         return{
             caption: '修改设备属性',
-            devl: {id:'', localId: '', name: '', fatherId: ''},
+            devl: "",
             options:[{id:'', name:''}],
+            optIds:[],
         }
     },
 
     created() {
-        this.devl.id = this.tempDatax.id;
-        this.devl.localId = this.tempDatax.localId;
-        this.devl.name = this.tempDatax.name;
+        this.devl = JSON.parse(JSON.stringify(this.tempDatax));
 
-        var father;
         if(this.modex=="add"){
-            //this.devl.id = this.localId(this.newIdx);
-            this.caption = '添加新设备';
-            //this.devl.id = this.getNewDevIds(this.$store.getters.rootDev);
-            this.devl.fatherId = this.tempDatax.fatherId;
-        }else if(this.modex=="mod"){
-            //this.devl.id = this.localId(this.tempDatax.id);
-            this.caption = '修改设备属性';
-
-            father = this.getParent(this.devl.id, undefined);
-            if(father != undefined){
-              this.devl.fatherId = father.id;
-            }
+            this.caption = '添加新子设备';
+            this.fillOptIds();
+            this.devl.id = this.optIds[0];
+        }else{
+            this.caption = '修改子设备属性';
         }
         this.fillOptions(this.$store.getters.rootDev, this.devl.id);
+
     },
 
     methods:{
@@ -105,6 +105,15 @@ export default{
         });
       },
 
+      fillOptIds(){
+        this.optIds.splice(0);
+        this.getNewDevIds("10").forEach(id=>{
+          this.optIds.push(id);
+        });
+
+        console.log("optIds : " + JSON.stringify(this.optIds))
+      },
+
       cancel(){
         this.emitShowWndMsg('goback');
       },
@@ -112,8 +121,7 @@ export default{
       ok(){
         var data = this.devl;
         if(this.modex=="mod"){
-          //this.modDev(data);
-          this.$store.dispatch("patchDev", data).then(ret=>{
+          this.$store.dispatch("patchDev", (data)).then(ret=>{
             if(ret == "failed"){
               alert("pachDev failed!");
             }else{
@@ -123,9 +131,8 @@ export default{
             }
           });
         }else if(this.modex=="add"){
-          //this.addDev(data);
           data = this.standardizeDev(data);
-          this.$store.dispatch("postDev", data).then(ret=>{
+          this.$store.dispatch("postDev", (data)).then(ret=>{
             if(ret == "failed"){
               alert("postDev failed!");
             }else{
@@ -143,9 +150,7 @@ export default{
 
 <style>
 .smallCard{
-    margin-top: 0px;
-    margin-bottom: 0px;
-    margin-left: 400px;
-    margin-right: 400px;
+    width: 600px;
+    margin: auto;
 }
 </style>

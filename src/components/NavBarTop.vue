@@ -13,12 +13,12 @@
     </el-menu>
 
     <div class="smallTopBar">
-      <span v-for="foot in $store.getters.footPrints">
+      <span v-for="(foot, index) in $store.getters.footPrints">
         &nbsp&nbsp
-        <el-button type="text" size="mini" @click="footClicked(foot)">
-          {{foot.name}}
+        <el-button type="text" size="small"  @click="footClicked(foot)">
+        {{foot.name}}
         </el-button>
-        <small>/</small>
+        <small v-show="index<$store.getters.footPrints.length-1">/</small>
       </span>
     </div>
   </div>
@@ -48,7 +48,7 @@ export default {
 
   methods:{
     menuClicked(key, keyPath){
-      console.log(key, keyPath);
+      //console.log(key, keyPath);
       if(key == "i-wndMode"){
         if(this.wndModex == "modify"){
           this.$store.commit("setWndMode", "view");
@@ -60,7 +60,6 @@ export default {
 
     footClicked(dev){
       //if(dev.children.length>0){
-
         this.$store.commit("reposFootPrint", dev.id);
         this.$emit("showWnd", "NavBarTop" , "footDev");
       //}
@@ -79,7 +78,7 @@ export default {
 
   .smallTopBar{
       background-color: WhiteSmoke  ;
-      margin-bottom: 25px;
+      margin-bottom: 15px;
       border-color: black;
       border-width: 2;
   }

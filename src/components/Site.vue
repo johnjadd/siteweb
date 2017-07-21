@@ -1,18 +1,12 @@
 <template>
     <div id="sitepage" >
-        <!--<h2>机房概览</h2>
-        <templateOutline ></templateOutline>
 
-        <h2>设备</h2>-->
         <templateNavBarTop v-on:showWnd="showWnd"></templateNavBarTop>
 
         <div class="margin1">
           <component v-bind:is="curView" v-on:showWnd="showWnd"></component>
         </div>
 
-        <!--<templateDevs v-show="curView=='templateDevs'"></templateDevs>
-        <templateDevMod v-show="curView=='templateDevMod'"></templateDevMod>
-        <templateVars v-show="curView=='templateVars'"></templateVars>-->
     </div>
 </template>
 
@@ -35,7 +29,6 @@ export default {
     },
     components:{
         'templateDevs': Devs,
-        'templateOutline': Outline,
         'templateDevMod': DevMod,
         'templateVarMod': VarMod,
         'templateVars': Vars,
